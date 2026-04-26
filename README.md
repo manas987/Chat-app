@@ -73,5 +73,4 @@ npm run dev
 ### 4. Access the App
 Open your browser and navigate to `http://localhost:5173` (or the port Vite provides) to start using the chat application.
 
-## 🎨 Design Philosophy
-The UI was explicitly designed to break away from the "cliché AI glassmorphism" look, opting instead for a warm, grounded, editorial aesthetic. It features an off-white/cream palette with clean borders, flat components, and a focus on content readability and comfort.
+
