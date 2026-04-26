@@ -72,7 +72,7 @@ interface customsocket extends WebSocket {
   isAuth?: boolean;
 }
 
-const socketlist = new Map<string, WebSocket>();
+const socketlist = new Map<string, Set<WebSocket>>();
 wss.on("connection", (ws: customsocket) => {
   ws.isAuth = false;
 
@@ -108,7 +108,10 @@ wss.on("connection", (ws: customsocket) => {
           }),
         );
 
-        socketlist.set(ws.user, ws);
+        if (!socketlist.has(ws.user)) {
+          socketlist.set(ws.user, new Set());
+        }
+        socketlist.get(ws.user)!.add(ws);
       } catch {
         ws.close();
       }
@@ -125,15 +128,18 @@ wss.on("connection", (ws: customsocket) => {
           time: new Date(),
         });
 
-        const target = socketlist.get(otherguy);
+        const targets = socketlist.get(otherguy);
 
-        if (target)
-          target.send(
-            JSON.stringify({
-              type: "message",
-              message: sendtodb,
-            }),
-          );
+        if (targets) {
+          for (const sock of targets) {
+            sock.send(
+              JSON.stringify({
+                type: "message",
+                message: sendtodb,
+              }),
+            );
+          }
+        }
 
         ws.send(
           JSON.stringify({
@@ -149,8 +155,13 @@ wss.on("connection", (ws: customsocket) => {
   });
 
   ws.on("close", () => {
-    if (ws.user) {
-      socketlist.delete(ws.user);
+    if (!ws.user) return;
+    const userSockets = socketlist.get(ws.user);
+    if (userSockets) {
+      userSockets.delete(ws);
+      if (userSockets.size === 0) {
+        socketlist.delete(ws.user);
+      }
     }
   });
 });
