@@ -16,19 +16,14 @@ export function auth(req: Request, res: Response, next: NextFunction) {
   const token = req.headers.token as string;
 
   if (!token) {
-    return res.json({ message: "fuck u" });
-  } else {
-    try {
-      let decoded;
-      try {
-        decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
-        req.userId = decoded.userId;
-      } catch (err) {
-        res.json("fuck uuuuuuuuuu stupid ass nigga");
-      }
-      next();
-    } catch (err) {
-      return res.json("fuck u 1000");
-    }
+    return res.status(401).json({ message: "Authentication required. No token provided." });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+    req.userId = decoded.userId;
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: "Invalid or expired token." });
   }
 }
