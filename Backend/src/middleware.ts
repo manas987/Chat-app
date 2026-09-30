@@ -10,8 +10,6 @@ declare global {
   }
 }
 
-const JWT_SECRET = process.env.JWT_SECRET!;
-
 export function auth(req: Request, res: Response, next: NextFunction) {
   const token = req.headers.token as string;
 
@@ -20,7 +18,7 @@ export function auth(req: Request, res: Response, next: NextFunction) {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
     req.userId = decoded.userId;
     next();
   } catch (err) {

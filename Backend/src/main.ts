@@ -7,24 +7,65 @@ import http from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import cors from "cors";
 import dotenv from "dotenv";
+import { auth } from "./middleware.ts";
 
 dotenv.config();
+
+const requiredEnvVars = ['CLIENT_URL', 'JWT_SECRET', 'MONGO_URL'];
+const missingEnvVars = requiredEnvVars.filter(env => !process.env[env]);
+
+if (missingEnvVars.length > 0) {
+  console.error(`❌ Missing required environment variables: ${missingEnvVars.join(', ')}`);
+  process.exit(1);
+}
+
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 app.use(express.json());
+
+const corsOrigin = process.env.CLIENT_URL || 'http://localhost:5173';
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: corsOrigin,
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'token'],
   }),
 );
+
+console.log(`✅ CORS enabled for: ${corsOrigin}`);
+
 const JWT_SECRET = process.env.JWT_SECRET!;
-mongoose.connect(process.env.MONGO_URL!);
+
+mongoose.connect(process.env.MONGO_URL!).catch((err) => {
+  console.error("❌ MongoDB connection failed:", err.message);
+  process.exit(1);
+});
+
+function isValidUsername(username: unknown): username is string {
+  return typeof username === "string" && /^[a-zA-Z0-9_]{3,20}$/.test(username);
+}
+
+function isValidPassword(password: unknown): password is string {
+  return typeof password === "string" && password.length >= 8;
+}
 
 app.post("/signup", async (req, res) => {
   const { username, password, fullname } = req.body;
+
+  if (!isValidUsername(username)) {
+    return res.status(400).json({
+      message: "Username must be 3-20 characters (letters, numbers, underscore only)",
+    });
+  }
+  if (!isValidPassword(password)) {
+    return res.status(400).json({ message: "Password must be at least 8 characters" });
+  }
+  if (typeof fullname !== "string" || fullname.trim().length === 0) {
+    return res.status(400).json({ message: "Full name is required" });
+  }
 
   const hashedpass = await bcrypt.hash(password, 10);
   try {
@@ -32,16 +73,21 @@ app.post("/signup", async (req, res) => {
     const token = jwt.sign({ userId: user.id }, JWT_SECRET);
     res.status(201).json({ token });
   } catch (err) {
-    return res.json("This username is alredy taken");
+    return res.status(400).json({ message: "This username is already taken" });
   }
 });
 app.post("/signin", async (req, res) => {
   const { username, password } = req.body;
+
+  if (typeof username !== "string" || typeof password !== "string" || !username || !password) {
+    return res.status(400).json({ message: "Username and password are required" });
+  }
+
   let user;
   try {
     user = await userdb.findOne({ username: username });
   } catch (err) {
-    return res.json("database not responsding try again");
+    return res.status(500).json({ message: "database not responding, try again" });
   }
 
   if (user && user.hashedpass) {
@@ -49,13 +95,13 @@ app.post("/signin", async (req, res) => {
     if (checkpass) {
       const token = jwt.sign({ userId: user!.id }, JWT_SECRET);
       res.status(201).json({ token });
-    } else res.json("Wrong password");
+    } else res.status(401).json({ message: "Wrong password" });
   } else {
-    res.json("Username not found. New user? Create new acc");
+    res.status(404).json({ message: "Username not found. New user? Create new acc" });
   }
 });
 
-app.get("/users", async (req, res) => {
+app.get("/users", auth, async (req, res) => {
   const search = req.query.search;
 
   if (typeof search !== "string")
