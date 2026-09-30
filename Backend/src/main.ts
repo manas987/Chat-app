@@ -73,6 +73,7 @@ app.post("/signup", async (req, res) => {
     const token = jwt.sign({ userId: user.id }, JWT_SECRET);
     res.status(201).json({ token });
   } catch (err) {
+    console.error("signup error:", err);
     return res.status(400).json({ message: "This username is already taken" });
   }
 });
@@ -87,6 +88,7 @@ app.post("/signin", async (req, res) => {
   try {
     user = await userdb.findOne({ username: username });
   } catch (err) {
+    console.error("signin error:", err);
     return res.status(500).json({ message: "database not responding, try again" });
   }
 
