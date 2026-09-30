@@ -15,7 +15,7 @@ const requiredEnvVars = ['CLIENT_URL', 'JWT_SECRET', 'MONGO_URL'];
 const missingEnvVars = requiredEnvVars.filter(env => !process.env[env]);
 
 if (missingEnvVars.length > 0) {
-  console.error(`❌ Missing required environment variables: ${missingEnvVars.join(', ')}`);
+  console.error(` Missing required environment variables: ${missingEnvVars.join(', ')}`);
   process.exit(1);
 }
 
@@ -40,7 +40,7 @@ console.log(`✅ CORS enabled for: ${corsOrigin}`);
 const JWT_SECRET = process.env.JWT_SECRET!;
 
 mongoose.connect(process.env.MONGO_URL!).catch((err) => {
-  console.error("❌ MongoDB connection failed:", err.message);
+  console.error(" MongoDB connection failed:", err.message);
   process.exit(1);
 });
 
