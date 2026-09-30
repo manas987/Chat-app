@@ -7,15 +7,16 @@ type Props = {
 export function Messageg({ content, time, sentbyme }: Props) {
   return (
     <div
-      className={`flex transition-all duration-200 ${sentbyme ? "justify-end" : "justify-start"}`}>
+      className={`flex animate-rise-in ${sentbyme ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[70%] p-3 pl-5 rounded-3xl ${sentbyme
-          ? "bg-linear-150 from-blue-400 via-blue-500 to-blue-600 rounded-br-none"
-          : "bg-white/10 ring ring-white/20 rounded-bl-none"
-          }`}>
-        <div className="text-white/80">{content}</div>
+        className={`max-w-[70%] px-4 py-2.5 rounded-3xl ${
+          sentbyme
+            ? "bg-orange-700 rounded-br-md text-white"
+            : "bg-white/8 ring-1 ring-white/10 rounded-bl-md text-white/90"
+        }`}>
+        <div className="break-words">{content}</div>
         <div
-          className={` text-xs mt-1  pr-2 text-left flex ${sentbyme ? "justify-end text-white/70" : "justify-start text-white/50"}`}>
+          className={`text-[11px] mt-1 ${sentbyme ? "text-white/70" : "text-white/40"}`}>
           {time}
         </div>
       </div>
